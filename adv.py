@@ -82,6 +82,8 @@ visited = {} # dictionary
 s = Stack()
 # hold the ID of the starting room:
 starting_room = player.current_room.id
+previous_room = None
+breadcrumbs = []
 
 # get direction for backtracking once all the exits of a room have been searched
 def backtrack(direction):
@@ -96,43 +98,62 @@ def backtrack(direction):
 
 path = [random.choice(player.current_room.get_exits())]
 s.push(path)
+breadcrumbs.append(backtrack(path))
 # While the Stack is not empty...
 while s.size() > 0:
     # Pop from the top of the stack, this is our current path.
     current_path = s.pop()
+    previous_room = player.current_room.id
     # current_direction is the last thing in the path
     current_direction = current_path[-1]
+    player.travel(current_direction)
     curr_room_id = player.current_room.id
+    traversal_path.append(current_direction)
+
+
     print('current_node', curr_room_id)
     # Check if we've visited yet, if not:
     if curr_room_id not in visited:
         # mark as visited
         visited[curr_room_id] = {}
+
         # get the current room's exits
         neighboring_rooms = player.current_room.get_exits()
         
         for room in neighboring_rooms:
             visited[curr_room_id][room] = '?'
-        traversal_path.append(current_direction)
         
-        next_room = random.choice(neighboring_rooms)
+        visited[curr_room_id][current_direction] = player.current_room.id
 
+        next_room = random.choice(neighboring_rooms)
+        # keep track of unsearched rooms
+        unsearched_rooms = []
         # iterate over the rooms
         for room in neighboring_rooms:
             print('Room', room)
+            if visited[curr_room_id][room] is "?":
+                unsearched_rooms.append(room)
+            
+            if len(unsearched_rooms) > 0:
+                s.push(unsearched_rooms[0])
+                breadcrumbs.append(backtrack(unsearched_rooms[0]))
+            else:
+                back = breadcrumbs.pop()
+                s.push(back)
+        
             # add the neighbor to the path
-            neighbor_path = current_path.copy()
-            neighbor_path.append(room)
-            print('Neighbor Path', neighbor_path)
+            #neighbor_path = current_path.copy()
+            #neighbor_path.append(room)
+            #print('Neighbor Path', neighbor_path)
             # Push the neighbor's path on the stack
-            s.push(neighbor_path)
+            #s.push(neighbor_path)
 
         # loop through each of the exits for the current room
         # if the value is '?', then add that that room to the stack to be visited.
         # 
 
-        player.travel(next_room)
-        visited[curr_room_id][next_room] = player.current_room.id
+        
+        
 print('Visited', visited)
 print('Traversal Path', traversal_path)
 
