@@ -77,7 +77,9 @@ class Stack():
 #         it to your traversal path.
 #   - Call player.travel(direction) to move to the next room.
 
-visited = {} # dictionary
+visited = {
+    player.current_room.id: {}
+} # dictionary
 # Create an empty queue and enqueue A PATH TO the starting vertex ID.
 s = Stack()
 # hold the ID of the starting room:
@@ -99,8 +101,15 @@ def backtrack(direction):
 path = [random.choice(player.current_room.get_exits())]
 s.push(path)
 breadcrumbs.append(backtrack(path))
-# While the Stack is not empty...
-while s.size() > 0:
+
+starting_exits = player.current_room.get_exits()
+
+for start_exits in starting_exits:
+    visited[player.current_room.id][start_exits] = "?"
+
+print('Breadcrumbs', breadcrumbs)
+
+while len(visited) < len(room_graph):
     # Pop from the top of the stack, this is our current path.
     current_path = s.pop()
     previous_room = player.current_room.id
@@ -110,44 +119,39 @@ while s.size() > 0:
     curr_room_id = player.current_room.id
     traversal_path.append(current_direction)
 
-
-    print('current_node', curr_room_id)
+    visited[previous_room][current_direction] = player.current_room.id
+    
+    # print('current_node', curr_room_id)
     # Check if we've visited yet, if not:
-    if curr_room_id not in visited:
+    if player.current_room.id not in visited:
         # mark as visited
-        visited[curr_room_id] = {}
-
-        # get the current room's exits
-        neighboring_rooms = player.current_room.get_exits()
+        visited[player.current_room.id] = {}
+    
+    if previous_room is not None:
+        visited[player.current_room.id][backtrack(current_direction)] = previous_room
         
-        for room in neighboring_rooms:
-            visited[curr_room_id][room] = '?'
-        
-        visited[curr_room_id][current_direction] = player.current_room.id
+    # get the current room's exits
+    neighboring_rooms = player.current_room.get_exits()
 
-        next_room = random.choice(neighboring_rooms)
-        # keep track of unsearched rooms
-        unsearched_rooms = []
-        # iterate over the rooms
-        for room in neighboring_rooms:
-            print('Room', room)
-            if visited[curr_room_id][room] is "?":
-                unsearched_rooms.append(room)
-            
-            if len(unsearched_rooms) > 0:
-                s.push(unsearched_rooms[0])
-                breadcrumbs.append(backtrack(unsearched_rooms[0]))
-            else:
-                back = breadcrumbs.pop()
-                s.push(back)
-        
-            # add the neighbor to the path
-            #neighbor_path = current_path.copy()
-            #neighbor_path.append(room)
-            #print('Neighbor Path', neighbor_path)
-            # Push the neighbor's path on the stack
-            #s.push(neighbor_path)
+    # next_room = random.choice(neighboring_rooms)
+    # keep track of unsearched rooms
+    unsearched_rooms = []
+    # iterate over the rooms
+    for room in neighboring_rooms:
+        #print('Room', room)
+        if room not in visited[player.current_room.id]:
+            visited[player.current_room.id][room] = "?"
 
+        if visited[player.current_room.id][room] is "?":
+            unsearched_rooms.append(room)
+        print("Unsearched rooms", unsearched_rooms)
+    if len(unsearched_rooms) > 0:
+        s.push(unsearched_rooms[-1])
+        breadcrumbs.append(backtrack(unsearched_rooms[-1]))
+    else:
+        back = breadcrumbs.pop()
+        s.push(back)
+        
         # loop through each of the exits for the current room
         # if the value is '?', then add that that room to the stack to be visited.
         # 
