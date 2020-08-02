@@ -11,10 +11,10 @@ world = World()
 
 # You may uncomment the smaller graphs for development and testing purposes.
 #map_file = "maps/test_line.txt"
-map_file = "maps/test_cross.txt"
+# map_file = "maps/test_cross.txt"
 # map_file = "maps/test_loop.txt"
 # map_file = "maps/test_loop_fork.txt"
-#map_file = "maps/main_maze.txt"
+map_file = "maps/main_maze.txt"
 
 # Loads the map into a dictionary
 room_graph=literal_eval(open(map_file, "r").read())
@@ -77,17 +77,17 @@ class Stack():
 #         it to your traversal path.
 #   - Call player.travel(direction) to move to the next room.
 
+# Create an empty stack and push A PATH TO the starting vertex ID.
+
+previous_room = None
+s = Stack()
+# keep track of the path back to previous rooms.
+breadcrumbs = []
 visited = {
     player.current_room.id: {}
-} # dictionary
-# Create an empty queue and enqueue A PATH TO the starting vertex ID.
-s = Stack()
-# hold the ID of the starting room:
-starting_room = player.current_room.id
-previous_room = None
-breadcrumbs = []
+}
 
-# get direction for backtracking once all the exits of a room have been searched
+# # get direction for backtracking once all the exits of a room have been searched
 def backtrack(direction):
     if direction == 'n':
         return 's'
@@ -98,69 +98,51 @@ def backtrack(direction):
     else:
         return 'e'
 
-path = [random.choice(player.current_room.get_exits())]
+directions = player.current_room.get_exits()
+current_direction = random.choice(directions)
+path = [current_direction]
 s.push(path)
-breadcrumbs.append(backtrack(path))
+breadcrumbs.append(backtrack(current_direction))
 
-starting_exits = player.current_room.get_exits()
-
-for start_exits in starting_exits:
-    visited[player.current_room.id][start_exits] = "?"
-
-print('Breadcrumbs', breadcrumbs)
+for direction in directions:
+    visited[player.current_room.id][direction] = "?"
 
 while len(visited) < len(room_graph):
-    # Pop from the top of the stack, this is our current path.
-    current_path = s.pop()
     previous_room = player.current_room.id
-    # current_direction is the last thing in the path
+    current_path = s.pop()
     current_direction = current_path[-1]
+    # Pop from the top of the stack, this is our current path.
     player.travel(current_direction)
-    curr_room_id = player.current_room.id
     traversal_path.append(current_direction)
 
+    # Update the previous room direction key with the id of the current room
     visited[previous_room][current_direction] = player.current_room.id
-    
-    # print('current_node', curr_room_id)
+
     # Check if we've visited yet, if not:
     if player.current_room.id not in visited:
         # mark as visited
         visited[player.current_room.id] = {}
-    
     if previous_room is not None:
+        # when moving between rooms update the current room with the direction travelled
         visited[player.current_room.id][backtrack(current_direction)] = previous_room
-        
     # get the current room's exits
     neighboring_rooms = player.current_room.get_exits()
-
-    # next_room = random.choice(neighboring_rooms)
-    # keep track of unsearched rooms
-    unsearched_rooms = []
+    
     # iterate over the rooms
-    for room in neighboring_rooms:
-        #print('Room', room)
-        if room not in visited[player.current_room.id]:
-            visited[player.current_room.id][room] = "?"
+    unsearched_rooms = []
+    for direction in neighboring_rooms:
+        if direction not in visited[player.current_room.id]:
+            visited[player.current_room.id][direction] = "?"
+        if visited[player.current_room.id][direction] is "?":
+            unsearched_rooms.append(direction)
 
-        if visited[player.current_room.id][room] is "?":
-            unsearched_rooms.append(room)
-        print("Unsearched rooms", unsearched_rooms)
     if len(unsearched_rooms) > 0:
-        s.push(unsearched_rooms[-1])
-        breadcrumbs.append(backtrack(unsearched_rooms[-1]))
+        s.push(unsearched_rooms[0])
+        breadcrumbs.append(backtrack(unsearched_rooms[0]))
     else:
         back = breadcrumbs.pop()
-        s.push(back)
+        s.push(back)      
         
-        # loop through each of the exits for the current room
-        # if the value is '?', then add that that room to the stack to be visited.
-        # 
-
-        
-        
-print('Visited', visited)
-print('Traversal Path', traversal_path)
-
 # TRAVERSAL TEST - DO NOT MODIFY
 visited_rooms = set()
 player.current_room = world.starting_room
